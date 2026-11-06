@@ -2,7 +2,7 @@ import pytest
 from textual.widgets import DataTable, Footer
 
 from ssh_locker.app import SshLockerApp
-from ssh_locker.models import Connection
+from ssh_locker.models import COLORS, Connection
 from ssh_locker.vault import Vault
 
 CONNS = [
@@ -36,10 +36,25 @@ async def test_lists_connections_in_order(vault):
     app = SshLockerApp(vault)
     async with app.run_test():
         assert row_texts(app) == [
-            ["Client A prod", "a.example.com:22", "deploy"],
-            ["Client B staging", "staging.b.se:2222", "peter"],
-            ["Home NAS", "192.168.1.20:22", "admin"],
+            ["  Client A prod", "a.example.com:22", "deploy", ""],
+            ["  Client B staging", "staging.b.se:2222", "peter", ""],
+            ["  Home NAS", "192.168.1.20:22", "admin", ""],
         ]
+
+
+async def test_color_square_before_name_and_comment_column(vault):
+    vault.connections[0].color = "green"
+    vault.connections[0].comment = "prod box"
+    app = SshLockerApp(vault)
+    async with app.run_test():
+        table = app.query_one(DataTable)
+        name_cell = table.get_row_at(0)[0]
+        assert name_cell.plain == "■ Client A prod"
+        square = name_cell.spans[0]
+        assert (square.start, square.end) == (0, 1)
+        assert str(square.style) == COLORS["green"]
+        assert row_texts(app)[0][3] == "prod box"
+        assert app.query_one(DataTable).ordered_columns[3].label.plain == "Comment"
 
 
 async def test_password_not_rendered(vault):

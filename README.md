@@ -30,6 +30,9 @@ unavailable. It stays unlocked until you quit.
 | i        | Import hosts from `~/.ssh/config`             |
 | q        | Quit                                          |
 
+Each connection can have a colour, shown as a square before its name in the
+list, and a comment, shown in its own column. Set both in New or Edit.
+
 Imported hosts have no password and connect with `ssh <alias>`, so your
 `~/.ssh/config` settings (keys, jump hosts, …) still apply. Add a password
 with Edit if you want one filled in automatically.

@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import stat
 
@@ -91,3 +92,30 @@ def test_save_failure_raises_vault_error(vault_home):
             v.save()
     finally:
         vault_home.chmod(0o700)
+
+
+def test_color_and_comment_roundtrip():
+    v = Vault.create("pw")
+    v.connections.append(
+        Connection("a", "h", color="green", comment="prod box, be careful")
+    )
+    v.save()
+    (conn,) = Vault.open_with_password("pw").connections
+    assert (conn.color, conn.comment) == ("green", "prod box, be careful")
+
+
+def test_vault_saved_before_color_and_comment_still_opens(monkeypatch):
+    import ssh_locker.vault as vault_mod
+
+    def legacy_asdict(conn):
+        data = dataclasses.asdict(conn)
+        del data["color"], data["comment"]
+        return data
+
+    v = Vault.create("pw")
+    v.connections.append(Connection("old", "h"))
+    with monkeypatch.context() as patch:
+        patch.setattr(vault_mod, "asdict", legacy_asdict)
+        v.save()
+    (conn,) = Vault.open_with_password("pw").connections
+    assert (conn.color, conn.comment) == (None, "")

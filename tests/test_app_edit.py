@@ -1,8 +1,8 @@
 import pytest
-from textual.widgets import Checkbox, DataTable, Input, Static
+from textual.widgets import Checkbox, DataTable, Input, Select, Static
 
 from ssh_locker.app import SshLockerApp
-from ssh_locker.models import Connection
+from ssh_locker.models import COLORS, Connection
 from ssh_locker.screens import validate_connection
 from ssh_locker.vault import Vault, VaultError
 
@@ -92,6 +92,45 @@ async def test_new_blank_password_stored_as_none(vault):
         await pilot.pause()
     assert persisted(vault)[-1].password is None
     assert persisted(vault)[-1].port == 22
+
+
+async def test_new_with_color_and_comment(vault):
+    app = SshLockerApp(vault)
+    async with app.run_test(size=SIZE) as pilot:
+        await pilot.press("n")
+        fill(app, name="gamma", host="gamma.example", comment="staging DB")
+        app.screen.query_one("#color", Select).value = "blue"
+        await pilot.click("#save")
+        await pilot.pause()
+    last = persisted(vault)[-1]
+    assert (last.color, last.comment) == ("blue", "staging DB")
+
+
+async def test_color_select_lists_palette_with_none(vault):
+    app = SshLockerApp(vault)
+    async with app.run_test(size=SIZE) as pilot:
+        await pilot.press("n")
+        select = app.screen.query_one("#color", Select)
+        assert select.is_blank()
+        assert [value for _, value in select._options if value is not Select.NULL] == list(COLORS)
+
+
+async def test_edit_prefills_and_clears_color(vault):
+    vault.connections[0].color = "red"
+    vault.connections[0].comment = "note"
+    vault.save()
+    app = SshLockerApp(vault)
+    async with app.run_test(size=SIZE) as pilot:
+        await pilot.press("e")
+        select = app.screen.query_one("#color", Select)
+        assert select.value == "red"
+        assert app.screen.query_one("#comment", Input).value == "note"
+        select.clear()
+        fill(app, comment="")
+        await pilot.click("#save")
+        await pilot.pause()
+    first = persisted(vault)[0]
+    assert (first.color, first.comment) == (None, "")
 
 
 async def test_edit_changes_selected_and_keeps_password_when_blank(vault):

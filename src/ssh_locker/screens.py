@@ -2,10 +2,19 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Checkbox, Input, Label, SelectionList, Static
+from rich.text import Text
+from textual.widgets import (
+    Button,
+    Checkbox,
+    Input,
+    Label,
+    Select,
+    SelectionList,
+    Static,
+)
 from textual.widgets.selection_list import Selection
 
-from ssh_locker.models import Connection
+from ssh_locker.models import COLORS, Connection
 from ssh_locker.sshconfig import ImportedHost
 
 
@@ -35,12 +44,12 @@ class ConnectionForm(ModalScreen[Connection | None]):
     DEFAULT_CSS = """
     ConnectionForm { align: center middle; }
     ConnectionForm > Vertical {
-        width: 60; height: auto; border: round $accent; padding: 1 2;
-        background: $surface;
+        width: 60; height: auto; max-height: 100%; overflow-y: auto;
+        border: round $accent; padding: 1 2; background: $surface;
     }
     ConnectionForm .field { height: 1; margin-bottom: 1; }
     ConnectionForm .field Label { width: 12; }
-    ConnectionForm .field Input { width: 1fr; }
+    ConnectionForm .field Input, ConnectionForm .field Select { width: 1fr; }
     ConnectionForm #error { color: $error; height: auto; }
     ConnectionForm Horizontal.buttons { height: 3; align-horizontal: right; }
     """
@@ -60,6 +69,8 @@ class ConnectionForm(ModalScreen[Connection | None]):
             yield self._field("Port", "port", str(e.port) if e else "22")
             yield self._field("Username", "username", e.username if e else "")
             yield self._field("Password", "password", "", password=True)
+            yield self._color_field(e.color if e else None)
+            yield self._field("Comment", "comment", e.comment if e else "")
             if e:
                 yield Checkbox("Clear saved password", id="clear-password", compact=True)
             yield Static("", id="error")
@@ -76,6 +87,24 @@ class ConnectionForm(ModalScreen[Connection | None]):
         )
         return row
 
+    @staticmethod
+    def _color_field(current: str | None):
+        row = Horizontal(classes="field")
+        row.compose_add_child(Label("Color"))
+        row.compose_add_child(
+            Select(
+                [
+                    (Text.assemble(("\u25a0 ", hex_), name.capitalize()), name)
+                    for name, hex_ in COLORS.items()
+                ],
+                prompt="None",
+                value=current if current in COLORS else Select.NULL,
+                id="color",
+                compact=True,
+            )
+        )
+        return row
+
     def _value(self, field_id: str) -> str:
         return self.query_one(f"#{field_id}", Input).value
 
@@ -83,6 +112,7 @@ class ConnectionForm(ModalScreen[Connection | None]):
         port_text = self._value("port").strip() or "22"
         port = int(port_text) if port_text.isdigit() else port_text
         password = self._value("password") or None
+        color = self.query_one("#color", Select)
         e = self._editing
         imported = False
         if e:
@@ -103,6 +133,8 @@ class ConnectionForm(ModalScreen[Connection | None]):
             username=self._value("username").strip(),
             password=password,
             imported=imported,
+            color=None if color.is_blank() else color.value,
+            comment=self._value("comment").strip(),
         )
         error = validate_connection(conn, self._existing, e)
         if error:

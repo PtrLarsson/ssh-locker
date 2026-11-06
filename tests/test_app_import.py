@@ -47,6 +47,7 @@ async def test_import_selected_hosts_added_as_imported(vault, config):
     assert persisted(vault) == [
         Connection("web", "web.example.com", 2222, "deploy", None, imported=True)
     ]
+    assert (persisted(vault)[0].color, persisted(vault)[0].comment) == (None, "")
 
 
 async def test_space_toggles_highlighted_host(vault, config):

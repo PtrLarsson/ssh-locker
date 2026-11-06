@@ -1,13 +1,21 @@
 from pathlib import Path
 
+from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import DataTable, Footer, Header
 
-from ssh_locker.models import Connection
+from ssh_locker.models import COLORS, Connection
 from ssh_locker.screens import ConfirmDelete, ConnectionForm, ImportScreen
 from ssh_locker.sshconfig import ImportedHost, parse_ssh_config
 from ssh_locker.vault import Vault, VaultError
+
+def name_cell(conn: Connection) -> Text:
+    """The name, led by its colour square (blank when it has no colour)."""
+    if conn.color in COLORS:
+        return Text.assemble(("\u25a0", COLORS[conn.color]), " ", conn.name)
+    return Text(f"  {conn.name}")
+
 
 MAIN_ACTIONS = {"connect", "new", "edit", "delete", "import_hosts", "quit"}
 
@@ -35,7 +43,7 @@ class SshLockerApp(App[Connection | None]):
 
     def on_mount(self) -> None:
         table = self.query_one(DataTable)
-        table.add_columns("Name", "Host:Port", "User")
+        table.add_columns("Name", "Host:Port", "User", "Comment")
         self.refresh_table()
         table.focus()
 
@@ -50,7 +58,12 @@ class SshLockerApp(App[Connection | None]):
         cursor = table.cursor_row
         table.clear()
         for conn in self.vault.connections:
-            table.add_row(conn.name, f"{conn.host}:{conn.port}", conn.username)
+            table.add_row(
+                name_cell(conn),
+                f"{conn.host}:{conn.port}",
+                conn.username,
+                conn.comment,
+            )
         if table.row_count:
             table.move_cursor(row=min(cursor, table.row_count - 1))
 
