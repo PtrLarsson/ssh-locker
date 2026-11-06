@@ -3,6 +3,8 @@
 A terminal app for macOS that keeps your SSH connections in an encrypted vault
 and starts a logged-in `ssh` session with one keypress.
 
+![ssh-locker showing a list of saved connections with colour labels and comments](docs/screenshot.svg)
+
 ## Install
 
 With [Homebrew](https://brew.sh):
@@ -93,6 +95,9 @@ with Edit if you want one filled in automatically.
 .venv/bin/pip install -e '.[dev]'
 .venv/bin/pytest
 ```
+
+Regenerate the README screenshot (uses made-up data and a throwaway vault)
+with `.venv/bin/python scripts/screenshot.py`.
 
 ## License
 

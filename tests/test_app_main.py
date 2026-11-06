@@ -109,3 +109,13 @@ async def test_footer_lists_all_commands(vault):
             ("p", "Password"),
             ("q", "Quit"),
         }
+
+
+async def test_selected_row_keeps_its_colour_square(vault):
+    vault.connections[0].color = "red"
+    app = SshLockerApp(vault)
+    async with app.run_test(size=(100, 14)):
+        table = app.query_one(DataTable)
+        assert table.cursor_row == 0
+        # The cursor highlight must not override the square's own colour.
+        assert table.cursor_foreground_priority == "renderable"

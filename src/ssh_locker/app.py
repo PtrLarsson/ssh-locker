@@ -54,7 +54,13 @@ class SshLockerApp(App[Connection | None]):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield DataTable(cursor_type="row", zebra_stripes=True)
+        # "renderable": the selected row keeps each cell's own colours, so the
+        # colour square stays visible under the highlight.
+        yield DataTable(
+            cursor_type="row",
+            zebra_stripes=True,
+            cursor_foreground_priority="renderable",
+        )
         yield Footer()
 
     def on_mount(self) -> None:
