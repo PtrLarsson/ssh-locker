@@ -1,9 +1,12 @@
+from pathlib import Path
+
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import DataTable, Footer, Header
 
 from ssh_locker.models import Connection
-from ssh_locker.screens import ConfirmDelete, ConnectionForm
+from ssh_locker.screens import ConfirmDelete, ConnectionForm, ImportScreen
+from ssh_locker.sshconfig import ImportedHost, parse_ssh_config
 from ssh_locker.vault import Vault
 
 MAIN_ACTIONS = {"connect", "new", "edit", "delete", "import_hosts", "quit"}
@@ -20,9 +23,10 @@ class SshLockerApp(App[Connection | None]):
         Binding("q", "quit", "Quit"),
     ]
 
-    def __init__(self, vault: Vault):
+    def __init__(self, vault: Vault, ssh_config_path: Path | None = None):
         super().__init__()
         self.vault = vault
+        self._ssh_config_path = ssh_config_path
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -102,4 +106,17 @@ class SshLockerApp(App[Connection | None]):
         self.refresh_table()
 
     def action_import_hosts(self) -> None:
-        pass
+        hosts = parse_ssh_config(self._ssh_config_path)
+        saved = {c.name for c in self.vault.connections}
+
+        def done(chosen: list[ImportedHost] | None) -> None:
+            new = [h for h in chosen or [] if h.alias not in saved]
+            if not new:
+                return
+            self.vault.connections.extend(
+                Connection(h.alias, h.hostname, h.port, h.user, None, imported=True)
+                for h in new
+            )
+            self._persist()
+
+        self.push_screen(ImportScreen(hosts, saved), done)

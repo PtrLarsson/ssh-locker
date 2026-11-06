@@ -2,9 +2,11 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Checkbox, Input, Label, Static
+from textual.widgets import Button, Checkbox, Input, Label, SelectionList, Static
+from textual.widgets.selection_list import Selection
 
 from ssh_locker.models import Connection
+from ssh_locker.sshconfig import ImportedHost
 
 
 def validate_connection(
@@ -116,6 +118,65 @@ class ConnectionForm(ModalScreen[Connection | None]):
 
     def action_cancel(self) -> None:
         self.dismiss(None)
+
+
+class ImportScreen(ModalScreen[list[ImportedHost]]):
+    """Pick hosts from ~/.ssh/config. Dismisses with the chosen hosts ([] on cancel)."""
+
+    BINDINGS = [Binding("escape", "cancel", "Cancel")]
+
+    DEFAULT_CSS = """
+    ImportScreen { align: center middle; }
+    ImportScreen > Vertical {
+        width: 70; height: auto; max-height: 90%; border: round $accent;
+        padding: 1 2; background: $surface;
+    }
+    ImportScreen SelectionList { height: auto; max-height: 20; }
+    ImportScreen Horizontal { height: 3; align-horizontal: right; }
+    """
+
+    def __init__(self, hosts: list[ImportedHost], saved_names: set[str]):
+        super().__init__()
+        self._hosts = hosts
+        self._saved = saved_names
+
+    def compose(self) -> ComposeResult:
+        with Vertical():
+            if not self._hosts:
+                yield Static("No hosts found in ~/.ssh/config", id="message")
+                yield Static("Press Enter or Esc to close")
+                return
+            yield Label("Import from ~/.ssh/config")
+            yield Static("space: select   tab: move to buttons   esc: cancel")
+            yield SelectionList[str](
+                *[
+                    Selection(
+                        f"{h.alias}  ({h.hostname}:{h.port})"
+                        + ("  [already saved]" if h.alias in self._saved else ""),
+                        h.alias,
+                        disabled=h.alias in self._saved,
+                    )
+                    for h in self._hosts
+                ]
+            )
+            with Horizontal():
+                yield Button("Import selected", id="import", variant="primary")
+                yield Button("Cancel", id="cancel")
+
+    def on_key(self, event) -> None:
+        if not self._hosts and event.key == "enter":
+            event.stop()
+            self.dismiss([])
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "import":
+            chosen = set(self.query_one(SelectionList).selected)
+            self.dismiss([h for h in self._hosts if h.alias in chosen])
+        else:
+            self.dismiss([])
+
+    def action_cancel(self) -> None:
+        self.dismiss([])
 
 
 class ConfirmDelete(ModalScreen[bool]):
