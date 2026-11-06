@@ -3,6 +3,7 @@ from textual.binding import Binding
 from textual.widgets import DataTable, Footer, Header
 
 from ssh_locker.models import Connection
+from ssh_locker.screens import ConfirmDelete, ConnectionForm
 from ssh_locker.vault import Vault
 
 MAIN_ACTIONS = {"connect", "new", "edit", "delete", "import_hosts", "quit"}
@@ -64,13 +65,41 @@ class SshLockerApp(App[Connection | None]):
         self.exit(None)
 
     def action_new(self) -> None:
-        pass
+        def done(conn: Connection | None) -> None:
+            if conn is not None:
+                self.vault.connections.append(conn)
+                self._persist()
+
+        self.push_screen(ConnectionForm(self.vault.connections), done)
 
     def action_edit(self) -> None:
-        pass
+        current = self.selected()
+        if current is None:
+            return
+
+        def done(conn: Connection | None) -> None:
+            if conn is not None:
+                index = self.vault.connections.index(current)
+                self.vault.connections[index] = conn
+                self._persist()
+
+        self.push_screen(ConnectionForm(self.vault.connections, current), done)
 
     def action_delete(self) -> None:
-        pass
+        current = self.selected()
+        if current is None:
+            return
+
+        def done(confirmed: bool | None) -> None:
+            if confirmed:
+                self.vault.connections.remove(current)
+                self._persist()
+
+        self.push_screen(ConfirmDelete(current.name), done)
+
+    def _persist(self) -> None:
+        self.vault.save()
+        self.refresh_table()
 
     def action_import_hosts(self) -> None:
         pass

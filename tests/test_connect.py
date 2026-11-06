@@ -17,6 +17,14 @@ def test_imported_uses_alias():
     assert build_launch(conn) == (["ssh", "web"], {})
 
 
+def test_imported_with_password_uses_alias_and_askpass():
+    conn = Connection("web", "web.example.com", 22, "deploy", "pw", imported=True)
+    argv, env = build_launch(conn)
+    assert argv == ["ssh", "web"]
+    assert env["SSH_LOCKER_PASSWORD"] == "pw"
+    assert env["SSH_ASKPASS_REQUIRE"] == "force"
+
+
 def test_no_password_has_no_askpass_env():
     argv, env = build_launch(Connection("a", "h.example", 2200, "u"))
     assert argv == ["ssh", "-p", "2200", "u@h.example"]

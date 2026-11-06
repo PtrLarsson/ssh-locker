@@ -16,10 +16,10 @@ ASKPASS = Path(__file__).with_name("askpass.sh")
 
 def build_launch(conn: Connection) -> tuple[list[str], dict[str, str]]:
     if conn.imported:
-        return ["ssh", conn.name], {}
-
-    target = f"{conn.username}@{conn.host}" if conn.username else conn.host
-    argv = ["ssh", "-p", str(conn.port), target]
+        argv = ["ssh", conn.name]
+    else:
+        target = f"{conn.username}@{conn.host}" if conn.username else conn.host
+        argv = ["ssh", "-p", str(conn.port), target]
     if conn.password is None:
         return argv, {}
 
