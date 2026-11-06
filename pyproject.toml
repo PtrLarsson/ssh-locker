@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ssh-locker"
+version = "0.1.0"
+description = "Terminal app that stores SSH connections in an encrypted vault"
+requires-python = ">=3.11"
+dependencies = [
+    "textual",
+    "cryptography",
+    "pyobjc-framework-Security",
+    "pyobjc-framework-LocalAuthentication",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio"]
+
+[project.scripts]
+ssh-locker = "ssh_locker.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ssh_locker = ["askpass.sh"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["src"]
+testpaths = ["tests"]
