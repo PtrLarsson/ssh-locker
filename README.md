@@ -28,10 +28,17 @@ unavailable. It stays unlocked until you quit.
 | e        | Edit the selected connection                  |
 | d        | Delete the selected connection (asks first)   |
 | i        | Import hosts from `~/.ssh/config`             |
+| p        | Change the master password                    |
 | q        | Quit                                          |
 
 Each connection can have a colour, shown as a square before its name in the
 list, and a comment, shown in its own column. Set both in New or Edit.
+
+To change the master password you can also run
+`ssh-locker --change-password`. Either way you must type the current
+password, even if you unlocked with Touch ID. The vault is re-encrypted
+with a fresh salt, and an existing Touch ID shortcut is updated (one you
+deleted is not recreated).
 
 Imported hosts have no password and connect with `ssh <alias>`, so your
 `~/.ssh/config` settings (keys, jump hosts, …) still apply. Add a password

@@ -129,7 +129,7 @@ def test_main_exits_1_with_message_on_vault_error(monkeypatch, capsys):
 
     monkeypatch.setattr(cli, "unlock", boom)
     with pytest.raises(SystemExit) as exc:
-        cli.main()
+        cli.main([])
     assert exc.value.code == 1
     err = capsys.readouterr().err
     assert "Wrong password or damaged vault" in err
@@ -144,7 +144,7 @@ def test_main_launches_selected_connection(monkeypatch):
         cli, "SshLockerApp", lambda vault: SimpleNamespace(run=lambda: conn)
     )
     monkeypatch.setattr(cli, "launch", launched.append)
-    cli.main()
+    cli.main([])
     assert launched == [conn]
 
 
@@ -155,7 +155,7 @@ def test_main_quit_does_not_launch(monkeypatch):
         cli, "SshLockerApp", lambda vault: SimpleNamespace(run=lambda: None)
     )
     monkeypatch.setattr(cli, "launch", launched.append)
-    cli.main()
+    cli.main([])
     assert launched == []
 
 
@@ -169,6 +169,6 @@ def test_main_reports_missing_ssh(monkeypatch, capsys):
     )
     monkeypatch.setattr(cli, "launch", no_ssh)
     with pytest.raises(SystemExit) as exc:
-        cli.main()
+        cli.main([])
     assert exc.value.code == 127
     assert "ssh" in capsys.readouterr().err

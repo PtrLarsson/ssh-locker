@@ -6,8 +6,14 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import DataTable, Footer, Header
 
+from ssh_locker import biometric
 from ssh_locker.models import COLORS, Connection
-from ssh_locker.screens import ConfirmDelete, ConnectionForm, ImportScreen
+from ssh_locker.screens import (
+    ChangePasswordScreen,
+    ConfirmDelete,
+    ConnectionForm,
+    ImportScreen,
+)
 from ssh_locker.sshconfig import ImportedHost, parse_ssh_config
 from ssh_locker.vault import Vault, VaultError
 
@@ -18,7 +24,15 @@ def name_cell(conn: Connection) -> Text:
     return Text(f"  {conn.name}")
 
 
-MAIN_ACTIONS = {"connect", "new", "edit", "delete", "import_hosts", "quit"}
+MAIN_ACTIONS = {
+    "connect",
+    "new",
+    "edit",
+    "delete",
+    "import_hosts",
+    "change_password",
+    "quit",
+}
 
 
 class SshLockerApp(App[Connection | None]):
@@ -29,6 +43,7 @@ class SshLockerApp(App[Connection | None]):
         Binding("e", "edit", "Edit"),
         Binding("d", "delete", "Delete"),
         Binding("i", "import_hosts", "Import"),
+        Binding("p", "change_password", "Password"),
         Binding("q", "quit", "Quit"),
     ]
 
@@ -128,6 +143,14 @@ class SshLockerApp(App[Connection | None]):
                 self._persist()
 
         self.push_screen(ConfirmDelete(current.name), done)
+
+    def action_change_password(self) -> None:
+        def done(changed: bool | None) -> None:
+            if changed:
+                biometric.replace_key_if_present(self.vault.key)
+                self.notify("Master password changed")
+
+        self.push_screen(ChangePasswordScreen(self.vault), done)
 
     def _persist(self) -> None:
         try:

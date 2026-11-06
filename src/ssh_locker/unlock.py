@@ -40,18 +40,25 @@ def unlock(prompt_password: Callable[[str], str]) -> Vault:
     raise VaultError("Could not unlock the vault")  # pragma: no cover
 
 
+def new_password_problem(current: str | None, new: str, repeat: str) -> str | None:
+    """Why a new master password is not acceptable, or None when it is."""
+    if len(new) < MIN_PASSWORD_LEN:
+        return f"The master password needs at least {MIN_PASSWORD_LEN} characters."
+    if new != repeat:
+        return "The passwords did not match."
+    if current is not None and new == current:
+        return "The new password must differ from the current one."
+    return None
+
+
 def _create(prompt_password: Callable[[str], str]) -> Vault:
     print("No vault found: choose a master password.", file=sys.stderr)
     for _ in range(ATTEMPTS):
         password = prompt_password("New master password: ")
         repeat = prompt_password("Repeat master password: ")
-        if len(password) < MIN_PASSWORD_LEN:
-            print(
-                f"The master password needs at least {MIN_PASSWORD_LEN} characters.",
-                file=sys.stderr,
-            )
-        elif password != repeat:
-            print("The passwords did not match.", file=sys.stderr)
+        problem = new_password_problem(None, password, repeat)
+        if problem:
+            print(problem, file=sys.stderr)
         else:
             vault = Vault.create(password)
             biometric.store_key(vault.key)

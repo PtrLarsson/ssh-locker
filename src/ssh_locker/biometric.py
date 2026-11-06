@@ -74,6 +74,15 @@ class _MacBackend:
             raise RuntimeError(f"SecItemCopyMatching failed: {status}")
         return bytes(data)
 
+    def exists(self) -> bool:
+        import Security as S
+
+        query = self._query()
+        query[S.kSecReturnAttributes] = True
+        query[S.kSecMatchLimit] = S.kSecMatchLimitOne
+        status, _ = S.SecItemCopyMatching(query, None)
+        return status == 0
+
     def delete(self) -> None:
         import Security as S
 
@@ -100,6 +109,17 @@ def load_key() -> bytes | None:
         return _backend.get()
     except Exception:
         return None
+
+
+def replace_key_if_present(key: bytes) -> bool:
+    """Point an existing shortcut at a new key; never create one the owner removed."""
+    try:
+        if not _backend.exists():
+            return False
+        _backend.put(key)
+        return True
+    except Exception:
+        return False
 
 
 def forget_key() -> None:

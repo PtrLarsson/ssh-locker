@@ -8,6 +8,7 @@ v1 files (MAGIC | 1 | salt | nonce | ciphertext, scrypt N = 2^15) still open,
 and are rewritten as v2 at the current cost on the next password unlock.
 """
 
+import hmac
 import json
 import os
 import tempfile
@@ -141,6 +142,19 @@ class Vault:
         except OSError as exc:
             raise VaultError(f"Cannot read vault: {exc.strerror or exc}") from exc
         return _File(raw)
+
+    def change_password(self, current: str, new: str) -> None:
+        """Re-encrypt under `new`. On any failure the old password stays valid."""
+        if not hmac.compare_digest(
+            _derive_key(current, self._salt, self._log2_n), self._key
+        ):
+            raise VaultError("Current password is wrong")
+        saved = (self._salt, self._log2_n, self._key)
+        try:
+            self._rekey(new)
+        except BaseException:
+            self._salt, self._log2_n, self._key = saved
+            raise
 
     def _rekey(self, password: str) -> None:
         """Re-encrypt under a fresh salt at the current KDF cost."""

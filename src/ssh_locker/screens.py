@@ -16,6 +16,8 @@ from textual.widgets.selection_list import Selection
 
 from ssh_locker.models import COLORS, Connection
 from ssh_locker.sshconfig import ImportedHost
+from ssh_locker.unlock import new_password_problem
+from ssh_locker.vault import Vault, VaultError
 
 
 def has_control_chars(value: str) -> bool:
@@ -233,6 +235,72 @@ class ImportScreen(ModalScreen[list[ImportedHost]]):
 
     def action_cancel(self) -> None:
         self.dismiss([])
+
+
+class ChangePasswordScreen(ModalScreen[bool]):
+    """Change the master password. Dismisses with True once it has changed."""
+
+    BINDINGS = [Binding("escape", "cancel", "Cancel")]
+
+    DEFAULT_CSS = """
+    ChangePasswordScreen { align: center middle; }
+    ChangePasswordScreen > Vertical {
+        width: 60; height: auto; max-height: 100%; overflow-y: auto;
+        border: round $accent; padding: 1 2; background: $surface;
+    }
+    ChangePasswordScreen .field { height: 1; margin-bottom: 1; }
+    ChangePasswordScreen .field Label { width: 18; }
+    ChangePasswordScreen .field Input { width: 1fr; }
+    ChangePasswordScreen #error { color: $error; height: auto; }
+    ChangePasswordScreen Horizontal.buttons { height: 3; align-horizontal: right; }
+    """
+
+    def __init__(self, vault: Vault):
+        super().__init__()
+        self._vault = vault
+
+    def compose(self) -> ComposeResult:
+        with Vertical():
+            yield Label("Change master password")
+            for label, field_id in (
+                ("Current password", "current"),
+                ("New password", "new"),
+                ("Repeat new", "repeat"),
+            ):
+                with Horizontal(classes="field"):
+                    yield Label(label)
+                    yield Input(id=field_id, password=True, compact=True)
+            yield Static("", id="error")
+            with Horizontal(classes="buttons"):
+                yield Button("Change", id="change", variant="primary")
+                yield Button("Cancel", id="cancel")
+
+    def _submit(self) -> None:
+        current, new, repeat = (
+            self.query_one(f"#{f}", Input).value for f in ("current", "new", "repeat")
+        )
+        problem = new_password_problem(current, new, repeat)
+        if problem is None:
+            try:
+                self._vault.change_password(current, new)
+            except VaultError as exc:
+                problem = str(exc)
+        if problem:
+            self.query_one("#error", Static).update(Text(problem))
+            return
+        self.dismiss(True)
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        self._submit()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "change":
+            self._submit()
+        else:
+            self.dismiss(False)
+
+    def action_cancel(self) -> None:
+        self.dismiss(False)
 
 
 class ConfirmDelete(ModalScreen[bool]):

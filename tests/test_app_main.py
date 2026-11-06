@@ -106,5 +106,6 @@ async def test_footer_lists_all_commands(vault):
             ("e", "Edit"),
             ("d", "Delete"),
             ("i", "Import"),
+            ("p", "Password"),
             ("q", "Quit"),
         }
