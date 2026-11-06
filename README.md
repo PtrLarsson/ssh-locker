@@ -5,7 +5,17 @@ and starts a logged-in `ssh` session with one keypress.
 
 ## Install
 
-Requires Python 3.11+.
+With [Homebrew](https://brew.sh):
+
+```sh
+brew install ptrlarsson/tap/ssh-locker
+```
+
+The first install builds from source and takes a few minutes. Recent
+Homebrew versions may ask you to trust the tap first; run the
+`brew trust` command it prints. Upgrade later with `brew upgrade ssh-locker`.
+
+From source (Python 3.11+):
 
 ```sh
 python3 -m venv .venv
