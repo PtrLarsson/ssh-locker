@@ -1,0 +1,49 @@
+name: Security
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC: new advisories appear without code changes
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependencies:
+    name: Audit app dependencies
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Install app and pip-audit
+        run: python -m pip install . pip-audit==2.10.1
+      - name: Audit installed dependencies
+        run: pip-audit
+
+  formula:
+    name: Audit Homebrew formula pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Fetch the published formula
+        run: >
+          curl -fsSL -o formula.rb
+          https://raw.githubusercontent.com/PtrLarsson/homebrew-tap/main/Formula/ssh-locker.rb
+      - name: List pinned versions
+        run: python scripts/formula_pins.py formula.rb | tee formula-requirements.txt
+      - name: Audit pinned versions
+        run: |
+          python -m pip install pip-audit==2.10.1
+          pip-audit -r formula-requirements.txt --no-deps --disable-pip
