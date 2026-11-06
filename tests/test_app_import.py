@@ -113,5 +113,5 @@ async def test_imported_connection_launches_via_alias(vault, config):
         await pilot.pause()
         await pilot.press("enter")
     argv, env = build_launch(app.return_value)
-    assert argv == ["ssh", "db"]
+    assert argv == ["ssh", "--", "db"]
     assert env == {}

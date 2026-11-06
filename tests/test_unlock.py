@@ -53,23 +53,23 @@ def existing_vault():
 
 
 def test_first_run_creates_vault_and_enrols_touch_id(bio):
-    vault = unlock(Prompts("secret", "secret"))
+    vault = unlock(Prompts("secret-pw", "secret-pw"))
     assert Vault.exists()
     assert bio.stored == [vault.key]
-    assert Vault.open_with_password("secret").connections == []
+    assert Vault.open_with_password("secret-pw").connections == []
 
 
 def test_first_run_mismatch_asks_again(bio):
-    prompts = Prompts("one", "two", "same", "same")
+    prompts = Prompts("first-one", "second-one", "same-same", "same-same")
     unlock(prompt_password=prompts)
     assert len(prompts.shown) == 4
-    Vault.open_with_password("same")
+    Vault.open_with_password("same-same")
 
 
 def test_first_run_empty_password_rejected(bio):
-    prompts = Prompts("", "", "ok", "ok")
+    prompts = Prompts("", "", "okay-okay", "okay-okay")
     unlock(prompts)
-    Vault.open_with_password("ok")
+    Vault.open_with_password("okay-okay")
 
 
 def test_touch_id_success_never_prompts_password(bio):

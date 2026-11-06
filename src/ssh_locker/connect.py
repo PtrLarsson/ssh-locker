@@ -19,10 +19,10 @@ def build_launch(conn: Connection) -> tuple[list[str], dict[str, str]]:
     # lockouts, and ssh would just feed it the same answer again.
     once = ["-o", "NumberOfPasswordPrompts=1"] if conn.password is not None else []
     if conn.imported:
-        argv = ["ssh", *once, conn.name]
+        argv = ["ssh", *once, "--", conn.name]
     else:
         target = f"{conn.username}@{conn.host}" if conn.username else conn.host
-        argv = ["ssh", *once, "-p", str(conn.port), target]
+        argv = ["ssh", *once, "-p", str(conn.port), "--", target]
     if conn.password is None:
         return argv, {}
 

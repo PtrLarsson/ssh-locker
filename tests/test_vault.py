@@ -84,14 +84,23 @@ def test_save_is_atomic():
     assert os.listdir(vault_path().parent) == ["vault.bin"]
 
 
-def test_save_failure_raises_vault_error(vault_home):
+def test_save_failure_raises_vault_error(vault_home, monkeypatch):
+    import errno
+
+    import ssh_locker.vault as vault_mod
+
     v = make_vault()
-    vault_home.chmod(0o500)
-    try:
+    before = vault_path().read_bytes()
+
+    def disk_full(src, dst):
+        raise OSError(errno.ENOSPC, "No space left on device")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(vault_mod.os, "replace", disk_full)
         with pytest.raises(VaultError, match="Cannot save vault"):
             v.save()
-    finally:
-        vault_home.chmod(0o700)
+    assert vault_path().read_bytes() == before
+    assert os.listdir(vault_home) == ["vault.bin"]  # temp file cleaned up
 
 
 def test_color_and_comment_roundtrip():

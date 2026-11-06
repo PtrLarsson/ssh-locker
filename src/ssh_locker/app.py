@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from rich.segment import Segments
 from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -47,6 +48,18 @@ class SshLockerApp(App[Connection | None]):
         self.refresh_table()
         table.focus()
 
+    def _fatal_error(self) -> None:
+        # Textual's crash report includes local variables, which can hold a
+        # typed or saved password. Report the error without them.
+        from rich.traceback import Traceback
+
+        self.bell()
+        traceback = Traceback(show_locals=False, width=None)
+        self._exit_renderables.append(
+            Segments(self.console.render(traceback, self.console.options))
+        )
+        self._close_messages_no_wait()
+
     def check_action(self, action: str, parameters: tuple) -> bool | None:
         # Main-screen commands are inactive while a dialog is open.
         if action in MAIN_ACTIONS and len(self.screen_stack) > 1:
@@ -58,11 +71,13 @@ class SshLockerApp(App[Connection | None]):
         cursor = table.cursor_row
         table.clear()
         for conn in self.vault.connections:
+            # Text cells are shown literally; plain strings would be parsed
+            # as markup, and "[/x]" in a name or comment would crash the list.
             table.add_row(
                 name_cell(conn),
-                f"{conn.host}:{conn.port}",
-                conn.username,
-                conn.comment,
+                Text(f"{conn.host}:{conn.port}"),
+                Text(conn.username),
+                Text(conn.comment),
             )
         if table.row_count:
             table.move_cursor(row=min(cursor, table.row_count - 1))
@@ -119,7 +134,7 @@ class SshLockerApp(App[Connection | None]):
             self.vault.save()
         except VaultError as exc:
             # Keep the change in memory so the session isn't lost; say so.
-            self.notify(str(exc), severity="error")
+            self.notify(str(exc), severity="error", markup=False)
         self.refresh_table()
 
     def action_import_hosts(self) -> None:

@@ -42,7 +42,17 @@ with Edit if you want one filled in automatically.
 - The vault is `~/Library/Application Support/ssh-locker/vault.bin`
   (override the folder with `SSH_LOCKER_HOME`), mode 0600.
 - Encryption is AES-256-GCM. The key comes from your master password via
-  scrypt; the file holds no plaintext.
+  scrypt (N = 2^17, r = 8, p = 1, the OWASP minimum); the cost is recorded in
+  the authenticated file header. Vaults from earlier versions are upgraded
+  automatically the next time you unlock with the master password. The file
+  holds no plaintext, and its folder is private to your user (0700).
+- The master password must be at least 8 characters.
+- Hosts and usernames that start with `-` or contain spaces are rejected, and
+  ssh is always called with `--` before the destination, so a saved value can
+  never be read as an ssh option. Control characters are rejected in all
+  fields, and names and comments are always displayed as plain text.
+- If the app ever crashes, the error report leaves out variable values, so a
+  password cannot end up in your terminal scrollback.
 - Saved passwords are handed to `ssh` through `SSH_ASKPASS`, reading an
   environment variable, so they never appear in the `ssh` command line.
   They are present in the `ssh` process's environment, readable only by

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 # Label colours a connection can carry, shown as a square before its name.
 # Mid-tone values stay readable on both light and dark terminals.
@@ -20,7 +20,7 @@ class Connection:
     host: str
     port: int = 22
     username: str = ""
-    password: str | None = None
+    password: str | None = field(default=None, repr=False)
     imported: bool = False
     color: str | None = None
     comment: str = ""

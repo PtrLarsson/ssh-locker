@@ -59,8 +59,15 @@ def parse_ssh_config(path: Path | None = None) -> list[ImportedHost]:
     aliases: list[str] | None = None
     settings: dict[str, str] = {}
 
+    def unsafe(value: str) -> bool:
+        return value.startswith("-") or any(
+            c.isspace() or ord(c) < 32 or ord(c) == 127 for c in value
+        )
+
     def flush() -> None:
         for alias in aliases or []:
+            if unsafe(alias) or unsafe(settings.get("hostname", alias)):
+                continue
             try:
                 port = int(settings.get("port", "22"))
             except ValueError:

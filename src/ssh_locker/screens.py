@@ -18,6 +18,10 @@ from ssh_locker.models import COLORS, Connection
 from ssh_locker.sshconfig import ImportedHost
 
 
+def has_control_chars(value: str) -> bool:
+    return any(ord(c) < 32 or ord(c) == 127 for c in value)
+
+
 def validate_connection(
     conn: Connection,
     existing: list[Connection],
@@ -28,6 +32,21 @@ def validate_connection(
         return "Name is required"
     if not conn.host.strip():
         return "Host is required"
+    for label, value in (
+        ("Name", conn.name),
+        ("Host", conn.host),
+        ("Username", conn.username),
+        ("Comment", conn.comment),
+    ):
+        if has_control_chars(value):
+            return f"{label} contains control characters"
+    # Whitespace or a leading "-" would make ssh read the value as options.
+    if conn.host.startswith("-") or any(c.isspace() for c in conn.host):
+        return "Host cannot start with '-' or contain spaces"
+    if conn.username.startswith("-") or any(
+        c.isspace() or c == "@" for c in conn.username
+    ):
+        return "Username cannot start with '-' or contain spaces or '@'"
     if not isinstance(conn.port, int) or not 1 <= conn.port <= 65535:
         return "Port must be a number from 1 to 65535"
     for other in existing:
@@ -138,7 +157,7 @@ class ConnectionForm(ModalScreen[Connection | None]):
         )
         error = validate_connection(conn, self._existing, e)
         if error:
-            self.query_one("#error", Static).update(error)
+            self.query_one("#error", Static).update(Text(error))
             return
         self.dismiss(conn)
 
@@ -186,8 +205,10 @@ class ImportScreen(ModalScreen[list[ImportedHost]]):
             yield SelectionList[str](
                 *[
                     Selection(
-                        f"{h.alias}  ({h.hostname}:{h.port})"
-                        + ("  [already saved]" if h.alias in self._saved else ""),
+                        Text(
+                            f"{h.alias}  ({h.hostname}:{h.port})"
+                            + ("  [already saved]" if h.alias in self._saved else "")
+                        ),
                         h.alias,
                         disabled=h.alias in self._saved,
                     )
@@ -235,7 +256,7 @@ class ConfirmDelete(ModalScreen[bool]):
 
     def compose(self) -> ComposeResult:
         with Vertical():
-            yield Label(f"Delete '{self._name}'?  (y/n)")
+            yield Label(Text(f"Delete '{self._name}'?  (y/n)"))
             with Horizontal():
                 yield Button("Delete", id="confirm", variant="error")
                 yield Button("Cancel", id="cancel")

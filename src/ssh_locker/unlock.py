@@ -5,6 +5,7 @@ from ssh_locker import biometric
 from ssh_locker.vault import Vault, VaultError
 
 ATTEMPTS = 3
+MIN_PASSWORD_LEN = 8
 
 
 def unlock(prompt_password: Callable[[str], str]) -> Vault:
@@ -44,8 +45,11 @@ def _create(prompt_password: Callable[[str], str]) -> Vault:
     for _ in range(ATTEMPTS):
         password = prompt_password("New master password: ")
         repeat = prompt_password("Repeat master password: ")
-        if not password:
-            print("The master password cannot be empty.", file=sys.stderr)
+        if len(password) < MIN_PASSWORD_LEN:
+            print(
+                f"The master password needs at least {MIN_PASSWORD_LEN} characters.",
+                file=sys.stderr,
+            )
         elif password != repeat:
             print("The passwords did not match.", file=sys.stderr)
         else:
