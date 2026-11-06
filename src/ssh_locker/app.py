@@ -7,7 +7,7 @@ from textual.widgets import DataTable, Footer, Header
 from ssh_locker.models import Connection
 from ssh_locker.screens import ConfirmDelete, ConnectionForm, ImportScreen
 from ssh_locker.sshconfig import ImportedHost, parse_ssh_config
-from ssh_locker.vault import Vault
+from ssh_locker.vault import Vault, VaultError
 
 MAIN_ACTIONS = {"connect", "new", "edit", "delete", "import_hosts", "quit"}
 
@@ -102,7 +102,11 @@ class SshLockerApp(App[Connection | None]):
         self.push_screen(ConfirmDelete(current.name), done)
 
     def _persist(self) -> None:
-        self.vault.save()
+        try:
+            self.vault.save()
+        except VaultError as exc:
+            # Keep the change in memory so the session isn't lost; say so.
+            self.notify(str(exc), severity="error")
         self.refresh_table()
 
     def action_import_hosts(self) -> None:

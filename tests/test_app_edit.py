@@ -4,7 +4,7 @@ from textual.widgets import Checkbox, DataTable, Input, Static
 from ssh_locker.app import SshLockerApp
 from ssh_locker.models import Connection
 from ssh_locker.screens import validate_connection
-from ssh_locker.vault import Vault
+from ssh_locker.vault import Vault, VaultError
 
 SIZE = (100, 40)
 
@@ -139,6 +139,36 @@ async def test_edit_imported_host_change_takes_over_details(vault):
         await pilot.click("#save")
         await pilot.pause()
     assert persisted(vault)[0].imported is False
+
+
+async def test_edit_imported_rename_takes_over_details(vault):
+    vault.connections[0] = Connection("web", "web", 22, "", None, imported=True)
+    vault.save()
+    app = SshLockerApp(vault)
+    async with app.run_test(size=SIZE) as pilot:
+        await pilot.press("e")
+        fill(app, name="renamed")
+        await pilot.click("#save")
+        await pilot.pause()
+    assert persisted(vault)[0].imported is False
+
+
+async def test_save_failure_is_reported_not_a_crash(vault, monkeypatch):
+    app = SshLockerApp(vault)
+    notes = []
+    monkeypatch.setattr(app, "notify", lambda msg, **kw: notes.append(msg))
+
+    def broken_save():
+        raise VaultError("Cannot save vault: disk full")
+
+    monkeypatch.setattr(vault, "save", broken_save)
+    async with app.run_test(size=SIZE) as pilot:
+        await pilot.press("n")
+        fill(app, name="gamma", host="gamma.example")
+        await pilot.click("#save")
+        await pilot.pause()
+        assert app.is_running
+        assert notes == ["Cannot save vault: disk full"]
 
 
 async def test_delete_requires_confirmation(vault):

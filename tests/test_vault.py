@@ -81,3 +81,13 @@ def test_file_mode_0600():
 def test_save_is_atomic():
     make_vault()
     assert os.listdir(vault_path().parent) == ["vault.bin"]
+
+
+def test_save_failure_raises_vault_error(vault_home):
+    v = make_vault()
+    vault_home.chmod(0o500)
+    try:
+        with pytest.raises(VaultError, match="Cannot save vault"):
+            v.save()
+    finally:
+        vault_home.chmod(0o700)

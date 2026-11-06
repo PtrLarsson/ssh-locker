@@ -49,7 +49,13 @@ with Edit if you want one filled in automatically.
   keeps the vault key in a normal login-Keychain item
   (service `ssh-locker`). Another program running as you could read that
   item without a fingerprint. The master password remains the root of the
-  encryption; to remove the shortcut, delete that Keychain item.
+  encryption. The shortcut is created on first run (and replaced only if it
+  stops matching the vault); to turn it off, delete that Keychain item and
+  it will not be recreated.
+- A saved password is offered to `ssh` once per connect
+  (`NumberOfPasswordPrompts=1`), so a wrong saved password cannot trigger
+  repeated login attempts. Note that with `ProxyJump` in an imported entry's
+  config, the same saved password is also offered to the jump host.
 
 ## Development
 

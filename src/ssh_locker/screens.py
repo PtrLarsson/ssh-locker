@@ -89,10 +89,13 @@ class ConnectionForm(ModalScreen[Connection | None]):
             clear = self.query_one("#clear-password", Checkbox).value
             if password is None and not clear:
                 password = e.password
+            name = self._value("name").strip()
             host, user = self._value("host").strip(), self._value("username").strip()
-            # Host/port/user of an imported entry come from ~/.ssh/config; once
-            # the user changes them, the entry is theirs and connects directly.
-            imported = e.imported and (host, port, user) == (e.host, e.port, e.username)
+            # An imported entry connects via its ssh alias (its name) and takes
+            # host/port/user from ~/.ssh/config; once the user changes any of
+            # them the entry is theirs and connects directly.
+            same = (name, host, port, user) == (e.name, e.host, e.port, e.username)
+            imported = e.imported and same
         conn = Connection(
             name=self._value("name").strip(),
             host=self._value("host").strip(),

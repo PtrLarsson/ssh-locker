@@ -112,8 +112,11 @@ class Vault:
         blob = header + nonce + AESGCM(self._key).encrypt(nonce, plaintext, header)
 
         path = vault_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".vault-")
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".vault-")
+        except OSError as exc:
+            raise VaultError(f"Cannot save vault: {exc.strerror or exc}") from exc
         try:
             with os.fdopen(fd, "wb") as f:
                 os.fchmod(f.fileno(), 0o600)
@@ -121,6 +124,9 @@ class Vault:
                 f.flush()
                 os.fsync(f.fileno())
             os.replace(tmp, path)
+        except OSError as exc:
+            Path(tmp).unlink(missing_ok=True)
+            raise VaultError(f"Cannot save vault: {exc.strerror or exc}") from exc
         except BaseException:
             Path(tmp).unlink(missing_ok=True)
             raise

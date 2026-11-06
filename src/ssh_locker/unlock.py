@@ -17,11 +17,12 @@ def unlock(prompt_password: Callable[[str], str]) -> Vault:
         return _create(prompt_password)
 
     key = biometric.load_key()
+    stale = False
     if key is not None:
         try:
             return Vault.open_with_key(key)
         except VaultError:
-            pass  # stale shortcut (e.g. master key changed): use the password
+            stale = True  # shortcut no longer matches the vault: use the password
 
     for attempt in range(ATTEMPTS):
         password = prompt_password("Master password: ")
@@ -32,7 +33,8 @@ def unlock(prompt_password: Callable[[str], str]) -> Vault:
                 raise
             print(str(exc), file=sys.stderr)
             continue
-        biometric.store_key(vault.key)
+        if stale:  # never recreate a shortcut the owner removed or cancelled
+            biometric.store_key(vault.key)
         return vault
     raise VaultError("Could not unlock the vault")  # pragma: no cover
 

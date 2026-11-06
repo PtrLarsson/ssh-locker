@@ -107,10 +107,17 @@ def test_wrong_password_three_times_raises_and_leaves_file(bio):
     assert bio.stored == []
 
 
-def test_password_unlock_reenrols_biometric_key(bio):
+def test_stale_key_is_replaced_after_password_unlock(bio):
     v = existing_vault()
+    bio.key = b"\x00" * 32
     unlock(Prompts("pw"))
     assert bio.stored == [v.key]
+
+
+def test_missing_touch_id_item_is_not_recreated_silently(bio):
+    existing_vault()  # load_key() -> None: cancelled, or the owner deleted the item
+    unlock(Prompts("pw"))
+    assert bio.stored == []
 
 
 # -- cli.main ----------------------------------------------------------------

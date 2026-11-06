@@ -15,11 +15,14 @@ ASKPASS = Path(__file__).with_name("askpass.sh")
 
 
 def build_launch(conn: Connection) -> tuple[list[str], dict[str, str]]:
+    # A wrong saved password must not be retried: repeated failures trip
+    # lockouts, and ssh would just feed it the same answer again.
+    once = ["-o", "NumberOfPasswordPrompts=1"] if conn.password is not None else []
     if conn.imported:
-        argv = ["ssh", conn.name]
+        argv = ["ssh", *once, conn.name]
     else:
         target = f"{conn.username}@{conn.host}" if conn.username else conn.host
-        argv = ["ssh", "-p", str(conn.port), target]
+        argv = ["ssh", *once, "-p", str(conn.port), target]
     if conn.password is None:
         return argv, {}
 
