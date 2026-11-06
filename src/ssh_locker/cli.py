@@ -1,6 +1,7 @@
 import argparse
 import getpass
 import sys
+from importlib.metadata import version
 
 from ssh_locker import biometric
 from ssh_locker.app import SshLockerApp
@@ -12,6 +13,9 @@ from ssh_locker.vault import Vault, VaultError
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="ssh-locker", description="Encrypted SSH connection manager."
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"ssh-locker {version('ssh-locker')}"
     )
     parser.add_argument(
         "--change-password",

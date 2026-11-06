@@ -172,3 +172,12 @@ def test_main_reports_missing_ssh(monkeypatch, capsys):
         cli.main([])
     assert exc.value.code == 127
     assert "ssh" in capsys.readouterr().err
+
+
+def test_main_version(capsys):
+    from importlib.metadata import version
+
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["--version"])
+    assert exc.value.code == 0
+    assert capsys.readouterr().out.strip() == f"ssh-locker {version('ssh-locker')}"
