@@ -83,3 +83,7 @@ with Edit if you want one filled in automatically.
 .venv/bin/pip install -e '.[dev]'
 .venv/bin/pytest
 ```
+
+## License
+
+MIT, see [LICENSE](LICENSE).
