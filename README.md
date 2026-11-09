@@ -1,5 +1,14 @@
 # ssh-locker
 
+[![CI](https://github.com/PtrLarsson/ssh-locker/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/PtrLarsson/ssh-locker/actions/workflows/ci.yml)
+[![Security](https://github.com/PtrLarsson/ssh-locker/actions/workflows/security.yml/badge.svg?branch=develop)](https://github.com/PtrLarsson/ssh-locker/actions/workflows/security.yml)
+[![CodeQL](https://github.com/PtrLarsson/ssh-locker/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/PtrLarsson/ssh-locker/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/github/license/PtrLarsson/ssh-locker)](LICENSE)
+[![Release](https://img.shields.io/github/v/tag/PtrLarsson/ssh-locker?label=release)](https://github.com/PtrLarsson/ssh-locker/tags)
+[![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FPtrLarsson%2Fssh-locker%2Fdevelop%2Fpyproject.toml)](pyproject.toml)
+[![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey)](#install)
+[![Homebrew](https://img.shields.io/badge/homebrew-ptrlarsson%2Ftap-orange)](https://github.com/PtrLarsson/homebrew-tap)
+
 A terminal app for macOS that keeps your SSH connections in an encrypted vault
 and starts a logged-in `ssh` session with one keypress.
 
