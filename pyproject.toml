@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ssh-locker"
-version = "0.1.0"
+version = "0.1.1"
 description = "Terminal app that stores SSH connections in an encrypted vault"
 requires-python = ">=3.11"
 license = "MIT"
